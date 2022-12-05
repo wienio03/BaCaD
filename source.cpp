@@ -1,19 +1,38 @@
 //Wienczyslaw Wlodyga
 #include <iostream>
+bool LaplaceOptimalization(long long int tab[32][32], int side) {
+    for (int i = 0; i < side; i++){
+        for(int j = i + 1 ; j < side; j++){
+            int temp=0;
+            for(int k = 0; k < side; k++){
+                if(tab[i][k]==tab[j][k])temp++;
+                if (temp==side) return true;
+            }
+        }
+    }
+    return false;
+}
+int pow(int x){
+    if(x%2==0)return 1;
+    else return (-1);
+}
 bool IsInsideOctal(int p, int l, int v, int oP, int oL, int oV, int R){
     int oD=((oP-p)*(oP-p))+((oL-l)*(oL-l))+((oV-v)*(oV-v));
     if ((R*R)>=oD) return true;
     return false;
 }
 bool IsInsideTetrahedron(int p, int l, int v, int tP, int tL, int tV, int tetraSide){
-    int tD=((tP-p)*(tP-p))+((tL-l)*(tL-l))+((tV-v)*(tV-v));
-    int hSquared=((tetraSide*tetraSide)/3);
-    int tSSquared=(tetraSide*tetraSide);
-    if (tD>=hSquared&&tD<((tSSquared)-hSquared))return true;
-    if (tD>=tSSquared&&tD<=hSquared)return true;
-    return false;
+    int x=(p-tP);
+    int y=(l-tL);
+    int z=(v-tV);
+    if(x<0)x=(-1)*x;
+    if(y<0)y=(-1)*y;
+    if(z<0)z=(-1)*z;
+    int wektor = x+y+z;
+   if(wektor<=tetraSide)return true;
+   return false;
 }
-void subMatrix(int tab[32][32][32], char lvp, int i, int side, int sub[side][side]){
+void subMatrix(int tab[32][32][32], char lvp, int i, int side, long long int sub[32][32]){
     if(lvp=='p'){
         for(int n = 0; n < side; n++){
             for(int j = 0; j < side; j++){
@@ -31,10 +50,33 @@ void subMatrix(int tab[32][32][32], char lvp, int i, int side, int sub[side][sid
     if(lvp=='v'){
         for(int n = 0; n < side; n++){
             for(int j = 0; j < side; j++){
-                sub[n][j]=tab[n][i][j];
+                sub[n][j]=tab[n][j][i];
             }
         }
     }
+}
+long long int LaplaceMatrixDeterminant(long long int tab[32][32], int side){
+    long long int det = 0;
+    long long int SubMatrix[32][32];
+    if (side==2) return tab[0][0]*tab[1][1]-tab[0][1]*tab[1][0];
+    else if (side==3) return (tab[0][0]*tab[1][1]*tab[2][2])+(tab[0][1]*tab[1][2]*tab[2][0])+(tab[0][2]*tab[1][0]*tab[2][1])-(tab[2][0]*tab[1][1]*tab[0][2])-(tab[2][1]*tab[1][2]*tab[0][0])-(tab[2][2]*tab[1][0]*tab[0][1]);
+    else if(LaplaceOptimalization(tab,side))return 0;
+    else {
+        for (int n = 0; n < side; n++){
+            int subK = 0;
+            for(int k = 1; k < side; k++){
+                int subJ = 0;
+                for(int j = 0; j < side; j++){
+                    if (j==n) continue;
+                    SubMatrix[subK][subJ]=tab[k][j];
+                    subJ++;
+                }
+                subK++;
+            }
+            det = det+(pow(n)*tab[0][n]*LaplaceMatrixDeterminant(SubMatrix,side-1));
+        }
+    }
+    return det;
 }
 const int maxLength = 32;
 int main() {
@@ -202,7 +244,7 @@ int main() {
                 for (int x = tVertexP; x <= tDepth; x++) {
                     for (int y = tVertexL; y <= tHeight; y++) {
                         for (int z = tVertexV; z <= tWidth; z++) {
-                           if(IsInsideTetrahedron(x,y,z,temp2,temp1,temp3,tSide)) sum += cube[x][y][z];
+                            if(IsInsideTetrahedron(x,y,z,temp2,temp1,temp3,tSide)) sum += cube[x][y][z];
                         }
                     }
                 }
@@ -210,9 +252,12 @@ int main() {
             }
             //Wyznacznik
             if (input == 'D'){
-                int subMatrix[sideLength][sideLength];
+                long long int subM[32][32];
+                long long int det;
                 std::cin >> k >> dimension;
-
+                subMatrix(cube,k,dimension,sideLength,subM);
+                det = LaplaceMatrixDeterminant(subM,sideLength);
+                std::cout << det << std::endl;
             }
         } while (input != 'E');
     }
